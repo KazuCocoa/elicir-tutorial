@@ -39,6 +39,12 @@ defmodule KV.Registry do
   def init(events) do
     names = HashDict.new
     refs  = HashDict.new
+    # init(args) - invoked when the server is started.
+    # It must return:
+    # 1. {:ok, state}
+    # 2. {:ok, state, timeout}
+    # 3. :ignore
+    # 4. {:stop, reason}
     {:ok, %{names: names, refs: refs, events: events}}
   end
 
