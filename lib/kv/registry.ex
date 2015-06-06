@@ -6,9 +6,9 @@ defmodule KV.Registry do
   @doc """
   Starts the registry.
   """
-  def start_link(event_manager, opts \\ []) do
+  def start_link(event_manager, buckets, opts \\ []) do
     # __MODULE__ means current module
-    GenServer.start_link(__MODULE__, event_manager, opts)
+    GenServer.start_link(__MODULE__, {event_manager, buckets}, opts)
   end
 
   @doc """
@@ -36,7 +36,7 @@ defmodule KV.Registry do
 
   ## Server Callbacks
 
-  def init(events) do
+  def init({events, buckets}) do
     names = HashDict.new
     refs  = HashDict.new
     # init(args) - invoked when the server is started.
@@ -45,7 +45,7 @@ defmodule KV.Registry do
     # 2. {:ok, state, timeout}
     # 3. :ignore
     # 4. {:stop, reason}
-    {:ok, %{names: names, refs: refs, events: events}}
+    {:ok, %{names: names, refs: refs, events: events, buckets: buckets}}
   end
 
   def handle_call({:lookup, name}, _from, state) do
@@ -60,7 +60,7 @@ defmodule KV.Registry do
     if HashDict.get(state.names, name) do
       {:noreply, state}
     else
-      {:ok, pid} = KV.Bucket.start_link()
+      {:ok, pid} = KV.Bucket.Supervisor.start_bucket(state.buckets)
       ref = Process.monitor(pid)
       refs = HashDict.put(state.refs, ref, name)
       names = HashDict.put(state.names, name, pid)
