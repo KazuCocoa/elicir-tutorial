@@ -30,17 +30,10 @@ defmodule KV.Registry do
     GenServer.call(server, {:create, name})
   end
 
-  @doc """
-  Stops the registry.
-  """
-  # def stop(server) do
-    # GenServer.call(server, :stop)
-  # end
-
   ## Server Callbacks
 
   def init({table, events, buckets}) do
-    refs = :ets.foldl(fn {name, pid}, acc -> 
+    refs = :ets.foldl(fn {name, pid}, acc ->
       HashDict.put(acc, Process.monitor(pid), name)
     end, HashDict.new, table)
     # init(args) - invoked when the server is started.
