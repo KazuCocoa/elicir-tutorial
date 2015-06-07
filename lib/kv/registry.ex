@@ -40,15 +40,16 @@ defmodule KV.Registry do
   ## Server Callbacks
 
   def init({table, events, buckets}) do
-    ets = :ets.new(table, [:named_table, read_concurrency: true])
-    refs  = HashDict.new
+    refs = :ets.foldl(fn {name, pid}, acc -> 
+      HashDict.put(acc, Process.monitor(pid), name)
+    end, HashDict.new, table)
     # init(args) - invoked when the server is started.
     # It must return:
     # 1. {:ok, state}
     # 2. {:ok, state, timeout}
     # 3. :ignore
     # 4. {:stop, reason}
-    {:ok, %{names: ets, refs: refs, events: events, buckets: buckets}}
+    {:ok, %{names: table, refs: refs, events: events, buckets: buckets}}
   end
 
   # def handle_call(:stop, _from, state) do
@@ -69,7 +70,7 @@ defmodule KV.Registry do
     end
   end
 
-  
+
   def handle_info({:DOWN, ref, :process, pid, _reason}, state) do
     {name, refs} = HashDict.pop(state.refs, ref)
     :ets.delete(state.names, name)
